@@ -16,10 +16,10 @@ def create_table():
     cur.execute('''
     CREATE TABLE IF NOT EXISTS ptpmondata (
     lastSyncSeqId INT primary key,
+    realLastSyncTime INT,
     meanPathDelay INT,
     intf VARCHAR(25),
     offsetFromMaster INT,
-    realLastSyncTime INT,
     skew float)
     ''')
 
@@ -38,7 +38,7 @@ def insert_data(connection, values):
     try:
         cursor = connection.cursor()
         sqlite_insert_query = """INSERT or IGNORE INTO ptpmondata
-                          (lastSyncSeqId, meanPathDelay, intf, offsetFromMaster, realLastSyncTime, skew)
+                          (lastSyncSeqId, realLastSyncTime, meanPathDelay, intf, offsetFromMaster, skew)
                            VALUES 
                           (?,?,?,?,?,?)"""
         count = cursor.executemany(sqlite_insert_query, values)
@@ -78,10 +78,10 @@ def create_tuple(indata):
     for item in indata:
         stable_tuple = (
             item['lastSyncSeqId'],
+            item['realLastSyncTime'],
             item['meanPathDelay'],
             item['intf'],
             item['offsetFromMaster'],
-            item['realLastSyncTime'],
             item['skew']
         )
         ordered_ptp_data.append(stable_tuple)
