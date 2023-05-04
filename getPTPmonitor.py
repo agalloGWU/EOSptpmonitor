@@ -5,8 +5,6 @@ Script to retrieve Precision Timing Protocol (PTP) monitor data from an Arista E
 Insert into a SQLite3 database
 """
 
-in
-
 import jsonrpclib
 from pprint import pprint
 import sqlite3
@@ -29,7 +27,7 @@ def create_table():
 def new_connection(infile):
     try:
         sqliteConnection = sqlite3.connect(infile)
-        print("Successfully Connected to SQLite")
+        # print("Successfully Connected to SQLite")
     except sqlite3.Error as error:
         print("Failed to connect to the database", error)
 
@@ -45,14 +43,14 @@ def insert_data(connection, values):
                           (?,?,?,?,?,?)"""
         count = cursor.executemany(sqlite_insert_query, values)
         connection.commit()
-        print("Record inserted successfully into ptpmondata table ", cursor.rowcount)
+        # print("Record inserted successfully into ptpmondata table ", cursor.rowcount)
         cursor.close()
     except sqlite3.Error as error:
         print("Failed to insert data into sqlite table", error)
     finally:
         if connection:
             connection.close()
-            print("The SQLite connection is closed")
+            # print("The SQLite connection is closed")
 
 
 def get_data():
