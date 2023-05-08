@@ -6,8 +6,12 @@ Insert into a SQLite3 database
 """
 
 import jsonrpclib
-from pprint import pprint
 import sqlite3
+
+# TODO: change primary key from sequence number to realLastSyncTime
+#       lastSyncSeqId is an 8 bit counter which we were using to ensure duplicate data was not inserted into the database
+#       *but*, this rolls at 65536 entries (seconds), about 18 hours
+
 
 
 def create_table():
@@ -15,12 +19,12 @@ def create_table():
     cur = conn.cursor()
     cur.execute('''
     CREATE TABLE IF NOT EXISTS ptpmondata (
-    lastSyncSeqId INT primary key,
-    realLastSyncTime INT,
-    meanPathDelay INT,
-    intf VARCHAR(25),
-    offsetFromMaster INT,
-    skew float)
+        lastSyncSeqId INT primary key,
+        realLastSyncTime INT,
+        meanPathDelay INT,
+        intf VARCHAR(25),
+        offsetFromMaster INT,
+        skew float)
     ''')
 
 
@@ -66,11 +70,12 @@ def get_data():
 
     return response[0]['ptpMonitorData']
 
+
 def create_tuple(indata):
-    """switch returns a json, resulting in a list of dicts
-    SQL insert assumes a stable order of values
+    """EOS returns json, resulting in a list of dicts
+    SQL insert assumes a stable order of values;
     this function creates a list of tuples in the correct order
-    so we can safely use INSERT and executemany
+    so we can safely use INSERT and use executemany
     Order is:
         lastSyncSeqId, meanPathDelay, intf, offsetFromMaster, realLastSyncTime, skew"""
     t_tuple = ()    # temp holder in loop
