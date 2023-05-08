@@ -19,8 +19,8 @@ def create_table():
     cur = conn.cursor()
     cur.execute('''
     CREATE TABLE IF NOT EXISTS ptpmondata (
-        lastSyncSeqId INT primary key,
-        realLastSyncTime INT,
+        lastSyncSeqId INT,
+        realLastSyncTime INT primary key,
         meanPathDelay INT,
         intf VARCHAR(25),
         offsetFromMaster INT,
