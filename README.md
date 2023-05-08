@@ -10,7 +10,7 @@ Arista EOS keeps track of the last 100 PTP records, which include:
  * `offsetFromMaster` (ns)
  * `skew` (Ratio of master's second to local second.)
 
-realLastSyncTime is used the Primary Key in the database to ensure duplicate data is not inserted
+`realLastSyncTime` is used the Primary Key in the database to ensure duplicate data is not inserted
 
 Script should be run each minute via cron to ensure we get all the data
 
