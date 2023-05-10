@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 7,
+  "id": 8,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -313,23 +313,147 @@
       ],
       "title": "Skew",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "d243d350-ed2f-4e35-a623-69260e41780f"
+      },
+      "description": "PTP skew is the clock frequency difference between master and slave:\nRatio of master's second to local second.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Degrees Celsius",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "frser-sqlite-datasource",
+            "uid": "d243d350-ed2f-4e35-a623-69260e41780f"
+          },
+          "hide": false,
+          "queryText": "SELECT queryTime, currentTemperature FROM temperature_data WHERE name='$TemperatureSensor'\n  ",
+          "queryType": "table",
+          "rawQueryText": "SELECT queryTime, currentTemperature FROM temperature_data WHERE name='$TemperatureSensor'\n  ",
+          "refId": "A",
+          "timeColumns": [
+            "queryTime"
+          ]
+        }
+      ],
+      "title": "Temperature Sensor4 - Board sensor",
+      "type": "timeseries"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "TempSensor13",
+          "value": "TempSensor13"
+        },
+        "datasource": {
+          "type": "frser-sqlite-datasource",
+          "uid": "d243d350-ed2f-4e35-a623-69260e41780f"
+        },
+        "definition": "SELECT DISTINCT name FROM temperature_data\n",
+        "description": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Temperature Sensor",
+        "multi": false,
+        "name": "TemperatureSensor",
+        "options": [],
+        "query": "SELECT DISTINCT name FROM temperature_data\n",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "EOS PTP data",
-  "uid": "f0a22da5-9dc7-4d40-91ee-6edec019ac6a",
-  "version": 4,
+  "title": "EOS PTP 2",
+  "uid": "7f046d04-e20f-454d-be6f-df61457dee07",
+  "version": 2,
   "weekStart": ""
 }

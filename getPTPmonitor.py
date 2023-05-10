@@ -123,7 +123,7 @@ def create_tuple(in_ptpdata, in_tempdata):
     epoch_time = int(time.time())
     for item in in_tempdata:
         stable_tuple = (
-            epoch_time, 
+            epoch_time,
             item['name'],
             item['currentTemperature'],
             item['description']
