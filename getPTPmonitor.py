@@ -7,14 +7,10 @@ Insert into a SQLite3 database
 
 import jsonrpclib
 import sqlite3
-
-# TODO: change primary key from sequence number to realLastSyncTime
-#       lastSyncSeqId is an 8 bit counter which we were using to ensure duplicate data was not inserted into the database
-#       *but*, this rolls at 65536 entries (seconds), about 18 hours
+import time
 
 
-
-def create_table():
+def create_ptp_table():
     conn = sqlite3.connect('./EOSptpmondata.sqlite3')
     cur = conn.cursor()
     cur.execute('''
@@ -27,6 +23,17 @@ def create_table():
         skew float)
     ''')
 
+def create_temp_table():
+    conn = sqlite3.connect('./EOSptpmondata.sqlite3')
+    cur = conn.cursor()
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS temperature_data (
+        queryTime INT,
+        name VARCHARR(25),
+        currentTemperature float,
+        description VARCHAR(50))
+        ''')
+
 
 def new_connection(infile):
     try:
@@ -38,14 +45,14 @@ def new_connection(infile):
     return sqliteConnection
 
 
-def insert_data(connection, values):
+def insert_ptp_data(connection, ptp_values):
     try:
         cursor = connection.cursor()
         sqlite_insert_query = """INSERT or IGNORE INTO ptpmondata
                           (lastSyncSeqId, realLastSyncTime, meanPathDelay, intf, offsetFromMaster, skew)
                            VALUES 
                           (?,?,?,?,?,?)"""
-        count = cursor.executemany(sqlite_insert_query, values)
+        count = cursor.executemany(sqlite_insert_query, ptp_values)
         connection.commit()
         # print("Record inserted successfully into ptpmondata table ", cursor.rowcount)
         cursor.close()
@@ -56,6 +63,23 @@ def insert_data(connection, values):
             connection.close()
             # print("The SQLite connection is closed")
 
+def insert_temp_data(connection, temp_values):
+    try:
+        cursor = connection.cursor()
+        sqlite_insert_query = """INSERT or IGNORE INTO temperature_data
+                          (queryTime, name, currentTemperature, description)
+                           VALUES 
+                          (?,?,?,?)"""
+        count = cursor.executemany(sqlite_insert_query, temp_values)
+        connection.commit()
+        # print("Record inserted successfully into ptpmondata table ", cursor.rowcount)
+        cursor.close()
+    except sqlite3.Error as error:
+        print("Failed to insert data into sqlite table", error)
+    finally:
+        if connection:
+            connection.close()
+            # print("The SQLite connection is closed")
 
 def get_data():
     from creds import target, username, password
@@ -66,12 +90,14 @@ def get_data():
 
     eapi_url = 'http://{}:{}@{}:{}/command-api'.format(username, target_password, ip, port)
     eapi_conn = jsonrpclib.Server(eapi_url)
-    response = eapi_conn.runCmds(1, ['show ptp monitor'])
 
-    return response[0]['ptpMonitorData']
+    ptp_response = eapi_conn.runCmds(1, ['show ptp monitor'])
+    temp_response = eapi_conn.runCmds(1, ['show system environment temperature'])
+
+    return ptp_response[0]['ptpMonitorData'], temp_response[0]['tempSensors']
 
 
-def create_tuple(indata):
+def create_tuple(in_ptpdata, in_tempdata):
     """EOS returns json, resulting in a list of dicts
     SQL insert assumes a stable order of values;
     this function creates a list of tuples in the correct order
@@ -80,7 +106,8 @@ def create_tuple(indata):
         lastSyncSeqId, meanPathDelay, intf, offsetFromMaster, realLastSyncTime, skew"""
     t_tuple = ()    # temp holder in loop
     ordered_ptp_data = []
-    for item in indata:
+    stable_tuple = ()
+    for item in in_ptpdata:
         stable_tuple = (
             item['lastSyncSeqId'],
             item['realLastSyncTime'],
@@ -90,15 +117,31 @@ def create_tuple(indata):
             item['skew']
         )
         ordered_ptp_data.append(stable_tuple)
-    return ordered_ptp_data
+
+    ordered_temp_data = []
+    stable_tuple = ()
+    epoch_time = int(time.time())
+    for item in in_tempdata:
+        stable_tuple = (
+            epoch_time, 
+            item['name'],
+            item['currentTemperature'],
+            item['description']
+        )
+        ordered_temp_data.append(stable_tuple)
+
+    return ordered_ptp_data, ordered_temp_data
 
 
 def main():
-    create_table()
-    ptpdata = get_data()
-    ptp_tuple = create_tuple(ptpdata)
+    create_ptp_table()
+    create_temp_table()
+    ptpdata, tempdata = get_data()
+    ptp_tuple, temp_tuple = create_tuple(ptpdata, tempdata)
     database = new_connection('./EOSptpmondata.sqlite3')
-    insert_data(database, ptp_tuple)
+    insert_ptp_data(database, ptp_tuple)
+    database = new_connection('./EOSptpmondata.sqlite3')
+    insert_temp_data(database, temp_tuple)
 
 
 if __name__ == "__main__":
