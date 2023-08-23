@@ -11,7 +11,7 @@ import time
 
 
 def create_ptp_table():
-    conn = sqlite3.connect('./EOSptpmondata.sqlite3')
+    conn = sqlite3.connect('./zFork.sqlite3')
     cur = conn.cursor()
     cur.execute('''
     CREATE TABLE IF NOT EXISTS ptpmondata (
@@ -24,7 +24,7 @@ def create_ptp_table():
     ''')
 
 def create_temp_table():
-    conn = sqlite3.connect('./EOSptpmondata.sqlite3')
+    conn = sqlite3.connect('./zFork.sqlite3')
     cur = conn.cursor()
     cur.execute('''
     CREATE TABLE IF NOT EXISTS temperature_data (
@@ -34,6 +34,15 @@ def create_temp_table():
         description VARCHAR(50))
         ''')
 
+
+def create_CPU_table():
+    conn = sqlite3.connect('./zFork.sqlite3')
+    cur = conn.cursor()
+    cur.execute('''
+    CREATE TABLE IF NOT EXISTS cpu_data (
+        queryTime INT,
+        currentCPUocc float)
+        ''')
 
 def new_connection(infile):
     try:
@@ -57,7 +66,7 @@ def insert_ptp_data(connection, ptp_values):
         # print("Record inserted successfully into ptpmondata table ", cursor.rowcount)
         cursor.close()
     except sqlite3.Error as error:
-        print("Failed to insert data into sqlite table", error)
+        print("Failed to insert data into sqlite ptpmondata table", error)
     finally:
         if connection:
             connection.close()
@@ -72,10 +81,29 @@ def insert_temp_data(connection, temp_values):
                           (?,?,?,?)"""
         count = cursor.executemany(sqlite_insert_query, temp_values)
         connection.commit()
-        # print("Record inserted successfully into ptpmondata table ", cursor.rowcount)
+        # print("Record inserted successfully into temp_values table ", cursor.rowcount)
         cursor.close()
     except sqlite3.Error as error:
-        print("Failed to insert data into sqlite table", error)
+        print("Failed to insert data into sqlite temp_values table", error)
+    finally:
+        if connection:
+            connection.close()
+            # print("The SQLite connection is closed")
+
+
+def insert_cpu_data(connection, epoch, cpu_values):
+    try:
+        cursor = connection.cursor()
+        sqlite_insert_query = """INSERT or IGNORE INTO cpu_data
+                          (queryTime, currentCPUocc)
+                           VALUES 
+                          (?,?)"""
+        count = cursor.execute(sqlite_insert_query, [epoch, cpu_values])
+        connection.commit()
+        # print("Record inserted successfully into cpu data table ", cursor.rowcount)
+        cursor.close()
+    except sqlite3.Error as error:
+        print("Failed to insert data into sqlite cpu data table", error)
     finally:
         if connection:
             connection.close()
@@ -93,11 +121,17 @@ def get_data():
 
     ptp_response = eapi_conn.runCmds(1, ['show ptp monitor'])
     temp_response = eapi_conn.runCmds(1, ['show system environment temperature'])
+    cpu_response = eapi_conn.runCmds(1, ['show processes top once'])
 
-    return ptp_response[0]['ptpMonitorData'], temp_response[0]['tempSensors']
+    ptp_data = ptp_response[0]['ptpMonitorData']
+    temp_data = temp_response[0]['tempSensors']
+    # we're looking for the percent the CPU is busy, so well subtract idle time from 100, to two decimal places
+    cpu_load = round(100 -  cpu_response[0]['cpuInfo']['%Cpu(s)']['idle'], 2)
+
+    return ptp_data, temp_data, cpu_load
 
 
-def create_tuple(in_ptpdata, in_tempdata):
+def create_tuple(in_ptpdata, in_tempdata, epoch):
     """EOS returns json, resulting in a list of dicts
     SQL insert assumes a stable order of values;
     this function creates a list of tuples in the correct order
@@ -120,7 +154,7 @@ def create_tuple(in_ptpdata, in_tempdata):
 
     ordered_temp_data = []
     stable_tuple = ()
-    epoch_time = int(time.time())
+    epoch_time = epoch
     for item in in_tempdata:
         stable_tuple = (
             epoch_time,
@@ -136,12 +170,16 @@ def create_tuple(in_ptpdata, in_tempdata):
 def main():
     create_ptp_table()
     create_temp_table()
-    ptpdata, tempdata = get_data()
-    ptp_tuple, temp_tuple = create_tuple(ptpdata, tempdata)
-    database = new_connection('./EOSptpmondata.sqlite3')
+    create_CPU_table()
+    epoch_time = int(time.time())
+    ptpdata, tempdata, cpuoccupancy = get_data()
+    ptp_tuple, temp_tuple = create_tuple(ptpdata, tempdata, epoch_time)
+    database = new_connection('./zFork.sqlite3')
     insert_ptp_data(database, ptp_tuple)
-    database = new_connection('./EOSptpmondata.sqlite3')
+    database = new_connection('./zFork.sqlite3')
     insert_temp_data(database, temp_tuple)
+    database = new_connection('./zFork.sqlite3')
+    insert_cpu_data(database, epoch_time, cpuoccupancy)
 
 
 if __name__ == "__main__":
