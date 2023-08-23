@@ -11,7 +11,7 @@ import time
 
 
 def create_ptp_table():
-    conn = sqlite3.connect('./zFork.sqlite3')
+    conn = sqlite3.connect('./EOSptpmondata.sqlite3')
     cur = conn.cursor()
     cur.execute('''
     CREATE TABLE IF NOT EXISTS ptpmondata (
@@ -24,7 +24,7 @@ def create_ptp_table():
     ''')
 
 def create_temp_table():
-    conn = sqlite3.connect('./zFork.sqlite3')
+    conn = sqlite3.connect('./EOSptpmondata.sqlite3')
     cur = conn.cursor()
     cur.execute('''
     CREATE TABLE IF NOT EXISTS temperature_data (
@@ -36,7 +36,7 @@ def create_temp_table():
 
 
 def create_CPU_table():
-    conn = sqlite3.connect('./zFork.sqlite3')
+    conn = sqlite3.connect('./EOSptpmondata.sqlite3')
     cur = conn.cursor()
     cur.execute('''
     CREATE TABLE IF NOT EXISTS cpu_data (
@@ -174,11 +174,11 @@ def main():
     epoch_time = int(time.time())
     ptpdata, tempdata, cpuoccupancy = get_data()
     ptp_tuple, temp_tuple = create_tuple(ptpdata, tempdata, epoch_time)
-    database = new_connection('./zFork.sqlite3')
+    database = new_connection('./EOSptpmondata.sqlite3')
     insert_ptp_data(database, ptp_tuple)
-    database = new_connection('./zFork.sqlite3')
+    database = new_connection('./EOSptpmondata.sqlite3')
     insert_temp_data(database, temp_tuple)
-    database = new_connection('./zFork.sqlite3')
+    database = new_connection('./EOSptpmondata.sqlite3')
     insert_cpu_data(database, epoch_time, cpuoccupancy)
 
 
